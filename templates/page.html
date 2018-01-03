@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+ <head>
+      <meta charset="UTF-8">
+
+
+
+      <title>Add to DB</title>
+      <script type="text/javascript" src = '/static/js/vue.js'></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-resource/1.3.1/vue-resource.js"></script>
+     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+     <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+ </head>
+
+<body>
+     <div id="app-2">
+          <p>[[ message ]]</p>
+          <table>
+               <thead>
+                    <tr>
+                         <th>Keyword</th>
+                         <th>
+                        <span>Status: </span><select v-model="selected">
+                         <option v-for="option in options" v-bind:value="option">
+                          [[ option ]]
+                         </option>
+                       </select></th>
+                         <th>Url</th>
+                         <th>Updated</th>
+                         <th>Edit</th>
+                    </tr>
+               </thead>
+
+               <tbody>
+                    <tr v-for="page in filterStatus" :class="{editing: page == editedPage}" v-cloak>
+                         <td>
+                              <div class="view">[[ page.keyword ]]</div>
+                              <div class="edit">
+                                   <input type="text" v-model="page.keyword"/>
+                              </div>
+                         </td>
+                         <td>
+                              <div class="view">[[ page.status ]]</div>
+                              <div class="edit">
+                                   <input type="text" v-model="page.status"/>
+                              </div>
+                         </td>
+                         <td>
+                              <div class="view">[[ page.url ]]</div>
+                              <div class="edit">
+                                   <input type="text" v-model="page.url"/>
+                              </div>
+                         </td>
+                         <td>
+                              <div class="view">[[ page.last_updated ]]</div>
+                              <div class="edit">
+                                   <input type="text" v-model="page.last_updated"/>
+                              </div>
+                         </td>
+                         <td>
+                              <div class="view">
+                                   <button class = "reg pure-button" @click="editData(page)">Edit</button>
+                                   <button class = "pure-button danger" @click="removeData(page)">Remove</button>
+                              </div>
+                              <div class="edit">
+                                   <button class = "reg pure-button" @click="doneEdit(page)">Done</button>
+                              </div>
+
+
+                         </td>
+                    </tr>
+                    <tr>
+                         <td><input type="text" v-model='kw'></td>
+                         <td><input type="text" v-model="stat"></td>
+                         <td><input type="text" v-model="url"></td>
+                         <td><button class = 'reg pure-button' type="button" name="button" @click="addData">Add</button></td>
+                    </tr>
+               </tbody>
+          </table>
+          <button class = 'pure-button reg' type="button" name="button2" @click="postData">Save</button>
+
+
+
+     </div>
+
+</body>
+<script>
+var app2 = new Vue({
+     el: '#app-2',
+     data: {
+          message: 'Hello Vue!',
+          pages: [],
+          added: [],
+          kw: "",
+          url: "",
+          stat:"",
+          selected: 'All',
+          options: ['All', 'active','wait','complete'],
+          editedPage: null,
+
+     },
+     delimiters: ['[[',']]'],
+     created() {
+          this.db_call()
+     },
+     mounted: function() {
+
+     },
+     computed:{
+          filterStatus(){
+               let filter = this.selected
+               if (filter === 'All') return this.pages
+               return this.pages.filter((i) => {
+                    return i.status === filter
+               })
+
+          }
+     },
+     methods: {
+          db_call: function() {
+               axios.get("{{ url_for('db_data') }}").then(response => {
+                    this.pages = response.data.data
+               //      this.ys = result.data.ys
+               //      this.newChart()
+               })
+          },
+          postData: function(){
+               axios.post('{{ url_for("add_data") }}', {
+                    page: this.pages
+               })
+               this.db_call()
+          },
+          addData: function(){
+               this.pages.push({'keyword':this.kw, 'status':this.stat,'url':this.url});
+               this.kw = ""
+               this.stat = ""
+               this.url = ""
+          },
+          removeData: function(page){
+               axios.post('{{ url_for("delete_record") }}',{
+                    row: page
+               })
+               this.db_call()
+          },
+          editData: function(page){
+               this.beforEditCache = page
+               this.editedPage = page
+          },
+          doneEdit: function(page){
+               page = page
+               this.editedPage = null
+          }
+     }
+})
+</script>
+
+</html>
